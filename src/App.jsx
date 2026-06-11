@@ -49,6 +49,41 @@ function FadeIn({ children, delay = 0, className = '' }) {
   )
 }
 
+function LogoText() {
+  const [vae, setVae] = useState(false)
+  const initialized = useRef(false)
+
+  useEffect(() => {
+    const initTimer = setTimeout(() => {
+      initialized.current = true
+      setVae(window.scrollY > 50)
+    }, 1100)
+    const onScroll = () => {
+      if (!initialized.current) return
+      setVae(window.scrollY > 50)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => { clearTimeout(initTimer); window.removeEventListener('scroll', onScroll) }
+  }, [])
+
+  const collapseDelay = ['0ms', '70ms', '160ms', '230ms', '320ms']
+  const expandDelay   = ['300ms', '200ms', '100ms', '60ms', '0ms']
+  const d = (i) => vae ? collapseDelay[i] : expandDelay[i]
+
+  return (
+    <span className={`logo-anim${vae ? ' logo-anim--vae' : ''}`}>
+      <span className="la-k">V</span>
+      <span className="la-f" style={{ transitionDelay: d(0) }}>unnam</span>
+      <span className="la-f la-sp" style={{ transitionDelay: d(1) }}>&nbsp;</span>
+      <span className="la-k">A</span>
+      <span className="la-f" style={{ transitionDelay: d(2) }}>gro</span>
+      <span className="la-f la-sp" style={{ transitionDelay: d(3) }}>&nbsp;</span>
+      <span className="la-k">E</span>
+      <span className="la-f" style={{ transitionDelay: d(4) }}>xports</span>
+    </span>
+  )
+}
+
 const PRODUCTS = [
   {
     id: 'dry-red-chilli',
@@ -106,9 +141,7 @@ function Navbar() {
     <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
       <a className="navbar__logo" href="#hero" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
         <img src="/vae_logo.png" alt="Vunnam Agro Exports logo" className="navbar__logo-img" />
-        <span className="navbar__logo-text">
-          <strong>Vunnam</strong> Agro Exports
-        </span>
+        <LogoText />
       </a>
       <button className="navbar__hamburger" aria-label="Toggle menu" onClick={() => setMenuOpen(!menuOpen)}>
         <span /><span /><span />
@@ -186,26 +219,42 @@ function Hero() {
 }
 
 function ProductCard({ product }) {
+  const [flipped, setFlipped] = useState(false)
   return (
-    <article className="product-card">
-      <div className="product-card__header" style={{ background: product.image ? 'none' : product.gradient }}>
-        {product.image
-          ? <img src={product.image} alt={product.name} className="product-card__img" />
-          : <span className="product-card__emoji" role="img" aria-label={product.name}>{product.emoji}</span>
-        }
-      </div>
-      <div className="product-card__body">
-        <span className="product-card__tagline">{product.tagline}</span>
-        <h3 className="product-card__name">{product.name}</h3>
-        <p className="product-card__desc">{product.description}</p>
-        <ul className="product-card__specs">
-          {product.specs.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ul>
-        <button className="btn btn--outline-red" onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}>
-          Request Sample
-        </button>
+    <article
+      className={`product-card${flipped ? ' product-card--flipped' : ''}`}
+      onClick={() => setFlipped(f => !f)}
+    >
+      <div className="product-card__inner">
+        <div className="product-card__front">
+          {product.image
+            ? <img src={product.image} alt={product.name} className="product-card__img" />
+            : <div className="product-card__img-fallback" style={{ background: product.gradient }}>
+                <span className="product-card__emoji" role="img" aria-label={product.name}>{product.emoji}</span>
+              </div>
+          }
+          <div className="product-card__front-overlay">
+            <span className="product-card__tagline">{product.tagline}</span>
+            <h3 className="product-card__name">{product.name}</h3>
+          </div>
+        </div>
+        <div className="product-card__back">
+          <span className="product-card__back-emoji" aria-hidden="true">{product.emoji}</span>
+          <h3 className="product-card__back-name">{product.name}</h3>
+          <p className="product-card__desc">{product.description}</p>
+          <ul className="product-card__specs">
+            {product.specs.map((s) => <li key={s}>{s}</li>)}
+          </ul>
+          <button
+            className="btn btn--outline-white"
+            onClick={(e) => {
+              e.stopPropagation()
+              document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          >
+            Request Sample
+          </button>
+        </div>
       </div>
     </article>
   )
@@ -215,13 +264,15 @@ function Products() {
   return (
     <section className="products" id="products">
       <div className="container">
-        <div className="section-header">
-          <span className="section-label">Our Products</span>
-          <h2 className="section-title">Finest Chilli Products<br />for Global Markets</h2>
-          <p className="section-subtitle">
-            Every batch is tested for quality, purity, and consistency before export.
-          </p>
-        </div>
+        <FadeIn className="fade-in--block">
+          <div className="section-header">
+            <span className="section-label">Our Products</span>
+            <h2 className="section-title">Finest Chilli Products<br />for Global Markets</h2>
+            <p className="section-subtitle">
+              Every batch is tested for quality, purity, and consistency before export.
+            </p>
+          </div>
+        </FadeIn>
         <div className="products__grid">
           {PRODUCTS.map((p, i) => (
             <FadeIn key={p.id} delay={i * 150}>
