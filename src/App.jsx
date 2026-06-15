@@ -49,6 +49,19 @@ function FadeIn({ children, delay = 0, className = '' }) {
   )
 }
 
+function ScrollProgress() {
+  const [pct, setPct] = useState(0)
+  useEffect(() => {
+    const onScroll = () => {
+      const total = document.documentElement.scrollHeight - window.innerHeight
+      setPct(total > 0 ? (window.scrollY / total) * 100 : 0)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  return <div className="scroll-progress" style={{ width: `${pct}%` }} aria-hidden="true" />
+}
+
 function LogoText() {
   const [vae, setVae] = useState(false)
   const initialized = useRef(false)
@@ -379,6 +392,44 @@ const EDGE_CHILLIS = [
   { left: '91%', delay: 4,   duration: 8,  size: 18 },
 ]
 
+const SECTIONS = [
+  { id: 'hero',     label: 'Home' },
+  { id: 'products', label: 'Products' },
+  { id: 'about',    label: 'About' },
+  { id: 'process',  label: 'Process' },
+  { id: 'contact',  label: 'Contact' },
+]
+
+function SectionNav() {
+  const [active, setActive] = useState('hero')
+  useEffect(() => {
+    const observers = SECTIONS.map(({ id }) => {
+      const el = document.getElementById(id)
+      if (!el) return null
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActive(id) },
+        { threshold: 0.35 }
+      )
+      obs.observe(el)
+      return obs
+    })
+    return () => observers.forEach(o => o?.disconnect())
+  }, [])
+  return (
+    <nav className="section-nav" aria-label="Page sections">
+      {SECTIONS.map(({ id, label }) => (
+        <button
+          key={id}
+          className={`section-nav__dot${active === id ? ' section-nav__dot--active' : ''}`}
+          onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}
+          aria-label={label}
+          title={label}
+        />
+      ))}
+    </nav>
+  )
+}
+
 function Hero() {
   const bgRef = useRef(null)
   useEffect(() => {
@@ -433,11 +484,49 @@ function Hero() {
   )
 }
 
-function ProductCard({ product }) {
-  const [flipped, setFlipped] = useState(false)
+function ProductModal({ product, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
 
+  return (
+    <div className="pmodal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label={product.name}>
+      <div className="pmodal" onClick={e => e.stopPropagation()}>
+        <button className="pmodal__close" onClick={onClose} aria-label="Close">✕</button>
+        <div className="pmodal__img-wrap" style={{ background: product.gradient }}>
+          {product.image
+            ? <img src={product.image} alt={product.name} className="pmodal__img" />
+            : <span className="pmodal__emoji">{product.emoji}</span>
+          }
+        </div>
+        <div className="pmodal__body">
+          <span className="product-card__category">{product.category}</span>
+          <h2 className="pmodal__name">{product.name}</h2>
+          <p className="pmodal__tagline">{product.tagline}</p>
+          <p className="pmodal__desc">{product.description}</p>
+          <ul className="pmodal__specs">
+            {product.specs.map(s => <li key={s}>{s}</li>)}
+          </ul>
+          <button className="btn btn--primary" onClick={() => {
+            onClose()
+            document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
+          }}>
+            Request Sample →
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProductCard({ product, onOpen }) {
   const handleMouseMove = (e) => {
-    if (flipped) return
     const card = e.currentTarget
     const rect = card.getBoundingClientRect()
     const x = (e.clientX - rect.left) / rect.width - 0.5
@@ -445,14 +534,12 @@ function ProductCard({ product }) {
     card.style.transform = `perspective(1200px) rotateY(${x * 10}deg) rotateX(${-y * 6}deg)`
   }
 
-  const handleMouseLeave = (e) => {
-    e.currentTarget.style.transform = ''
-  }
+  const handleMouseLeave = (e) => { e.currentTarget.style.transform = '' }
 
   return (
     <article
-      className={`product-card${flipped ? ' product-card--flipped' : ''}`}
-      onClick={() => setFlipped(f => !f)}
+      className="product-card"
+      onClick={() => onOpen(product)}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
@@ -476,7 +563,7 @@ function ProductCard({ product }) {
           <div className="product-card__front-info">
             <span className="product-card__category">{product.category}</span>
             <h3 className="product-card__front-name">{product.name}</h3>
-            <span className="product-card__tap-hint">Tap for details</span>
+            <span className="product-card__tap-hint">Click to view details</span>
           </div>
         </div>
         <div className="product-card__back">
@@ -505,6 +592,7 @@ const PRODUCT_CATEGORIES = ['All', 'Chillies', 'Whole Pulses', 'Dal', 'Beans']
 
 function Products() {
   const [activeFilter, setActiveFilter] = useState('All')
+  const [selectedProduct, setSelectedProduct] = useState(null)
   const filtered = activeFilter === 'All' ? PRODUCTS : PRODUCTS.filter(p => p.category === activeFilter)
 
   return (
@@ -532,10 +620,13 @@ function Products() {
             ))}
           </div>
         </FadeIn>
+        {selectedProduct && (
+          <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+        )}
         <div className="products__grid">
           {filtered.map((p, i) => (
             <FadeIn key={p.id} delay={i * 100}>
-              <ProductCard product={p} />
+              <ProductCard product={p} onOpen={setSelectedProduct} />
             </FadeIn>
           ))}
         </div>
@@ -807,6 +898,8 @@ function FarmToPort() {
 export default function App() {
   return (
     <>
+      <ScrollProgress />
+      <SectionNav />
       <Navbar />
       <main>
         <Hero />
