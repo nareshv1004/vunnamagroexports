@@ -1658,4 +1658,208 @@
   .pmodal { animation: none; }
   .scroll-progress { transition: none; }
   .section-nav__dot { transition-duration: 0.01ms !important; }
+  .reach__source-ring,
+  .reach__dest-ring,
+  .reach__dest-dot { animation: none !important; opacity: 1 !important; }
+  .reach__route { animation: none !important; opacity: 1 !important; }
+}
+
+/* ─── Global Reach Map ───────────────────────────────────────────────────── */
+
+.reach {
+  padding: 100px 0;
+  background: var(--cream);
+}
+
+.reach__hint {
+  color: rgba(0,0,0,0.42);
+  font-style: italic;
+}
+
+.reach__map {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.22);
+  background: #07162e;
+}
+
+/* Routes — dashed hyphen lines that fade in when they mount (visible=true) */
+@keyframes route-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.reach__route {
+  stroke-dasharray: 7 5;
+  opacity: 0;
+  animation: route-fade 0.5s ease-out forwards;
+}
+
+/* Destination dot — fades in after route draws */
+.reach__dest-dot {
+  opacity: 0;
+  animation: dot-appear 0.4s ease-out forwards;
+}
+@keyframes dot-appear {
+  to { opacity: 1; }
+}
+
+/* Pulsing rings */
+.reach__source-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ring-expand 2.5s ease-out infinite;
+}
+.reach__dest-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: ring-expand 2.5s ease-out infinite;
+}
+@keyframes ring-expand {
+  0%   { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* Hover tooltip */
+.reach__tooltip {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 14px));
+  background: rgba(4, 12, 28, 0.97);
+  border: 1px solid rgba(255, 130, 45, 0.5);
+  border-radius: 10px;
+  padding: 10px 14px;
+  z-index: 20;
+  white-space: nowrap;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+}
+
+.reach__tt-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.reach__tt-header span { font-size: 1.1rem; }
+
+.reach__tt-header strong {
+  color: rgba(255,255,255,0.95);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.reach__tt-origin {
+  color: rgba(220,70,35,0.85);
+  font-size: 11px;
+  margin: 0;
+}
+
+.reach__tt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reach__tt-list li {
+  color: rgba(255,255,255,0.72);
+  font-size: 11px;
+  padding-left: 12px;
+  position: relative;
+}
+
+.reach__tt-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: rgba(255,130,45,0.9);
+}
+
+/* ─── How It Works ───────────────────────────────────────────────────────── */
+
+.how {
+  padding: 100px 0;
+  background: var(--white);
+}
+
+.how__steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0;
+  position: relative;
+}
+
+.how__step {
+  position: relative;
+  text-align: center;
+  padding: 32px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.how__step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.how__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.how__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.how__desc {
+  font-size: 0.75rem;
+  color: #666;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.how__arrow {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  color: var(--green);
+  opacity: 0.4;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .how__steps {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: rgba(0,0,0,0.06);
+  }
+  .how__step {
+    background: var(--white);
+  }
+  .how__arrow { display: none; }
+  .reach .section-title { font-size: clamp(1.6rem, 5vw, 2.4rem); }
 }
